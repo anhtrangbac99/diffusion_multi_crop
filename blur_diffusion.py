@@ -454,7 +454,25 @@ class ForwardBlurIncreasing:
                                    self.resolution)
         loss = torch.mean((pred - std) ** 2)
         return loss
-
+    
+    def get_loss_i_multi_crop(self,model,x_i_list,i,eps_list,pad_size):
+        loss = 0
+        for idx,x_global in enumerate(x_i_list[:2]):
+            eps_global = eps_list[idx]
+            for idxx,x_local in enumerate(x_i_list[2:]):
+                inp = torch.nn.functional.pad(x_local,(pad_size[idx+2],pad_size[idx+2],pad_size[idx+2],pad_size[idx+2]),'constant',0)
+                pred = model(inp,i)
+                loss += torch.mean((pred-eps_global)**2)
+            if idx == 0:
+                idx_ = 1
+            else: 
+                idx_ = 0
+            inp = torch.nn.functional.pad(x_i_list[idx_],(pad_size[idx_],pad_size[idx_],pad_size[idx_],pad_size[idx_]),'constant',0)
+            pred = model(inp,i)
+            loss += torch.mean((pred-eps_global)**2)
+                   
+        return loss
+    
 class H_functions:
     """
     Ported from https://github.com/bahjat-kawar/ddrm
